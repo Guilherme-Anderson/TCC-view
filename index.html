@@ -24,9 +24,9 @@
 <body>
   <h2>Visualizar leituras do Firebase</h2>
 
-  <label for="nó">Selecionar nó raiz:</label>
-  <select id="nó">
-    <option value="">-- Carregando nós... --</option>
+  <label for="data">Selecionar data:</label>
+  <select id="data">
+    <option value="">-- Escolha uma data --</option>
   </select>
 
   <div id="saida"></div>
@@ -44,49 +44,44 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    const seletorNo = document.getElementById("nó");
+    const seletorData = document.getElementById("data");
     const saida = document.getElementById("saida");
 
-    function carregarNosRaiz() {
-      db.ref().once("value", snapshot => {
-        const dados = snapshot.val();
-        seletorNo.innerHTML = '<option value="">-- Escolha um nó --</option>';
-
-        if (!dados) return;
-
-        Object.keys(dados).forEach(no => {
-          const opcao = document.createElement("option");
-          opcao.value = no;
-          opcao.textContent = no;
-          seletorNo.appendChild(opcao);
-        });
+    // Carrega as datas disponíveis no nó principal
+    db.ref("150625-teste").once("value", snapshot => {
+      const datas = snapshot.val();
+      if (!datas) return;
+      Object.keys(datas).forEach(data => {
+        const opt = document.createElement("option");
+        opt.value = data;
+        opt.textContent = data;
+        seletorData.appendChild(opt);
       });
-    }
+    });
 
-    seletorNo.addEventListener("change", () => {
-      const no = seletorNo.value;
+    seletorData.addEventListener("change", () => {
+      const dataSelecionada = seletorData.value;
       saida.innerHTML = "";
+      if (!dataSelecionada) return;
 
-      if (!no) return;
-
-      db.ref(no).once("value", snapshot => {
-        const dados = snapshot.val();
-
-        if (!dados) {
+      db.ref("150625-teste/" + dataSelecionada).once("value", snapshot => {
+        const registros = snapshot.val();
+        if (!registros) {
           saida.innerHTML = "<p>Nenhum dado encontrado.</p>";
           return;
         }
 
-        const chaves = Object.keys(dados).sort();
+        const chaves = Object.keys(registros).sort();
 
         chaves.forEach(chave => {
-          const item = dados[chave];
+          const item = registros[chave];
           if (item && typeof item === "object") {
             const html = `
               <div class="item">
                 <strong>Chave:</strong> ${chave}<br>
                 <strong>ID:</strong> ${item.ID}<br>
                 <strong>Tempo:</strong> ${item.tempo}<br>
+                <strong>Hora:</strong> ${item.hora}<br>
                 <strong>Corrente (A):</strong> ${item.valorAmp}<br>
                 <strong>Tensão (V):</strong> ${item.valorVol}
               </div>
@@ -96,8 +91,6 @@
         });
       });
     });
-
-    carregarNosRaiz();
   </script>
 </body>
 </html>
